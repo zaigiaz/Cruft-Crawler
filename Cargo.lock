@@ -558,6 +558,7 @@ checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 name = "cruft-crawler"
 version = "0.1.0"
 dependencies = [
+ "filetime",
  "sahomedb",
  "steady_state",
 ]
@@ -736,6 +737,18 @@ name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
+
+[[package]]
+name = "filetime"
+version = "0.2.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc0505cd1b6fa6580283f6bdf70a73fcf4aba1184038c90902b92b3dd0df63ed"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "libredox",
+ "windows-sys 0.60.2",
+]
 
 [[package]]
 name = "find-msvc-tools"
@@ -1263,6 +1276,7 @@ checksum = "416f7e718bdb06000964960ffa43b4335ad4012ae8b99060261aa4a8088d5ccb"
 dependencies = [
  "bitflags 2.9.4",
  "libc",
+ "redox_syscall 0.5.17",
 ]
 
 [[package]]
@@ -2065,9 +2079,9 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "steady_state"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "548b6b29f09b8f490b3c4fc163a177285293aa44b377435b1188630bb8eb7fe9"
+checksum = "08e94e30ac9c3ad6c59d20e315ca8cb63eb353c1869a4ae0722ad0f10d869fd6"
 dependencies = [
  "aeron",
  "ahash",
@@ -2100,6 +2114,7 @@ dependencies = [
  "ringbuf",
  "serde",
  "serde_json",
+ "socket2",
  "tempfile",
  "time",
  "uuid",

@@ -1,7 +1,7 @@
 use steady_state::*;
 use std::path::{Path, PathBuf};
-use std::time::SystemTime;
 use std::error::Error;
+use filetime::FileTime;
 
 #[allow(unused_imports)]
 use std::time::Duration;
@@ -12,28 +12,28 @@ use std::time::Duration;
 // derived fn that allow cloning and printing
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub(crate) struct FileMeta {
-    pub path: PathBuf,
+    pub rel_path: PathBuf,
+    pub abs_path: PathBuf,
     pub file_name: String,
     pub is_file: bool,
-    pub is_dir: bool,
     pub size: u64,
-    pub modified: Option<SystemTime>,
-    pub created: Option<SystemTime>,
+    pub modified: Option<filetime::FileTime>,
+    pub created: Option<filetime::FileTime>,
     pub readonly: bool,
 } 
 
-// for easy printing and 
+// for easy debugging if needed 
 impl FileMeta {
-   pub fn printMeta(&self) {
+   pub fn meta_print(&self) {
 	println!("Printing Metadata Object -----------");
-	println!("File_Path: {:?}", self.path);
-	println!("File_Name: {}", self.file_name);
-	println!("is_file: {}", self.is_file);
-	println!("is_dir: {}", self.is_dir);
-	println!("size: {}", self.size);
-	println!("modified: {:?}", self.modified);
-	println!("created: {:?}", self.created);
-	println!("read-only: {}", self.readonly);
+	println!("Absolute_Path: {:?}", self.abs_path);
+	println!("Relative_Path: {:?}", self.rel_path);
+	println!("File_Name: {}",       self.file_name);
+	println!("is_file: {}",         self.is_file);
+	println!("size: {}",            self.size);
+	println!("modified: {:?}",      self.modified.unwrap().seconds() / 60);
+	println!("created: {:?}",       self.created.unwrap().seconds() / 60);
+	println!("read-only: {}",       self.readonly);
 	println!("Printing Metadata Object -----------\n");
     }
 }
@@ -86,49 +86,43 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
 // function to visit test directory and return metadata of each file and insert into metadata struct
 // then send to the db_manager actor (although this doesnt occur in this function)
-
 pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
     let mut metas = Vec::new();
 
     // Read the directory (non-recursive)
     for entry_res in std::fs::read_dir(dir)? {
         let entry = entry_res?;
-        let path = entry.path();
+        let rel_path = entry.path();
+	 let abs_path = std::path::absolute(&rel_path)?;
         let file_name = entry
             .file_name()
             .into_string()
             .unwrap_or_else(|os| os.to_string_lossy().into_owned());
-
+	
         // Try to get metadata; if failing for a specific entry, skip it but continue
         match entry.metadata() {
             Ok(md) => {
                 let is_file = md.is_file();
-                let is_dir = md.is_dir();
                 let size = md.len();
-                let modified = md.modified().ok();
-                let created = md.created().ok();
+                let modified = FileTime::from_last_modification_time(&md);
+                let created = FileTime::from_creation_time(&md);
                 let readonly = md.permissions().readonly();
 
                 metas.push(FileMeta {
-                    path,
+                    rel_path,
+		      abs_path,
                     file_name,
                     is_file,
-                    is_dir,
                     size,
-                    modified,
+                    modified: Some(modified),
                     created,
                     readonly,
                 });
             }
             Err(e) => {
-                // Option A: skip entries we can't stat. Option B: return Err(e.into()) to fail hard.
-                // Here we skip but log to stderr.
                 eprintln!("warning: cannot stat {}: {}", file_name, e);
             }
         }
     }
     Ok(metas)
 }
-
-
-

@@ -40,7 +40,7 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
 
 	// print using the function given in crawler.rs for pretty-printing
-	recieved.unwrap().printMeta();
+	recieved.unwrap().meta_print();
 
 	}
     Ok(())

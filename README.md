@@ -26,8 +26,8 @@ It uses a local quantized LLM to help recommend safe deletions, and delivers a c
 
 
 # Crates Potentially needed
-filetime: https://docs.rs/filetime/latest/filetime/ (cross-platform time-dates)
-Walkdir: https://docs.rs/walkdir/latest/walkdir/ (for recursive traversal of file-system)
-sled: https://docs.rs/sled/latest/sled/ (for long term storage)
-steady-state: https://docs.rs/steady_state/latest/steady_state/ (project architecture)
-llama-cpp: https://docs.rs/llama_cpp/latest/llama_cpp/ (interact with llama-cpp bindings for LLM)
+- filetime: https://docs.rs/filetime/latest/filetime/ (cross-platform time-dates)
+- Walkdir: https://docs.rs/walkdir/latest/walkdir/ (for recursive traversal of file-system)
+- sled: https://docs.rs/sled/latest/sled/ (for long term storage)
+- steady-state: https://docs.rs/steady_state/latest/steady_state/ (project architecture)
+- llama-cpp: https://docs.rs/llama_cpp/latest/llama_cpp/ (interact with llama-cpp bindings for LLM)

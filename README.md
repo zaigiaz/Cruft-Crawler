@@ -6,7 +6,7 @@ It uses a local quantized LLM to help recommend safe deletions, and delivers a c
 
 ### crawler actor
 - [x] TODO: get absolute path of file name for id
-- [ ] TODO: import hashing crate and hash first chunk of files or vector embedding
+- [x] TODO: import hashing crate and hash first chunk of files or vector embedding
 - [x] TODO: hard-code values for different file-types and how to treat them
 - [ ] TODO: implement Walkdir to recursively get different directories
 - [ ] TODO: Implement state or communication to Database to ensure its crawling in correct location on actor failure

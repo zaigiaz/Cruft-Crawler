@@ -1,10 +1,12 @@
 use steady_state::*;
 use std::path::{Path, PathBuf};
+
+use std::io::prelude::*;
+
 use std::error::Error;
 use filetime::FileTime;
-
-#[allow(unused_imports)]
-use std::time::Duration;
+use sha2::{Sha256, Digest};
+use hex;
 
 // have here for implementing state later
 // use crate::db_manager::db_state;
@@ -12,14 +14,15 @@ use std::time::Duration;
 // derived fn that allow cloning and printing
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub(crate) struct FileMeta {
-    pub rel_path: PathBuf,
-    pub abs_path: PathBuf,
+    pub rel_path:  PathBuf,
+    pub abs_path:  PathBuf,
     pub file_name: String,
-    pub is_file: bool,
-    pub size: u64,
-    pub modified: Option<filetime::FileTime>,
-    pub created: Option<filetime::FileTime>,
-    pub readonly: bool,
+    pub hash:      String,
+    pub is_file:   bool,
+    pub size:      u64,
+    pub modified:  Option<filetime::FileTime>,
+    pub created:   Option<filetime::FileTime>,
+    pub readonly:  bool,
 } 
 
 // for easy debugging if needed 
@@ -29,6 +32,7 @@ impl FileMeta {
 	println!("Absolute_Path: {:?}", self.abs_path);
 	println!("Relative_Path: {:?}", self.rel_path);
 	println!("File_Name: {}",       self.file_name);
+	println!("hash: {}",            self.hash);
 	println!("is_file: {}",         self.is_file);
 	println!("size: {}",            self.size);
 	println!("modified: {:?}",      self.modified.unwrap().seconds() / 60);
@@ -71,8 +75,6 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 	for m in &metas {
 	actor.wait_vacant(&mut crawler_tx, 1).await; 
 
-	// awaiting either sleeping the thread or actor.wait_periodic() cause's a return None issue at the end
-	// actor.wait_periodic(Duration::from_millis(1000)).await;
 
 	actor.try_send(&mut crawler_tx, m.clone()).expect("couldn't send to DB");
 	}
@@ -84,6 +86,33 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
 
 
+// Read first 1024 bytes of file then hash, note that this hashes the bytes, not a string from the file
+// although we could import another package and hex.encode() to convert
+// note that I am only 70% confident in this function, apparently it doesnt always read 1024 bytes exactly?
+// research more
+pub fn get_file_hash(file_name: PathBuf) -> Result<String, Box<dyn Error>> {
+
+    let mut file = std::fs::File::open(file_name)?;
+
+    // buffer of 1024 bytes
+    let mut buffer = [0u8; 1024];
+
+    let n = file.read(&mut buffer)?;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&buffer[..n]);
+    let result = hasher.finalize();
+
+    let mut out: [u8; 32] = result.into();
+    out.copy_from_slice(&result);
+
+    //encodes value as string
+    let convert = hex::encode(out);
+    
+    Ok(convert)
+}
+
+
 // function to visit test directory and return metadata of each file and insert into metadata struct
 // then send to the db_manager actor (although this doesnt occur in this function)
 pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
@@ -93,12 +122,14 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
     for entry_res in std::fs::read_dir(dir)? {
         let entry = entry_res?;
         let rel_path = entry.path();
-	 let abs_path = std::path::absolute(&rel_path)?;
+	let abs_path = std::path::absolute(&rel_path)?;
         let file_name = entry
             .file_name()
             .into_string()
             .unwrap_or_else(|os| os.to_string_lossy().into_owned());
 	
+
+
         // Try to get metadata; if failing for a specific entry, skip it but continue
         match entry.metadata() {
             Ok(md) => {
@@ -107,11 +138,17 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
                 let modified = FileTime::from_last_modification_time(&md);
                 let created = FileTime::from_creation_time(&md);
                 let readonly = md.permissions().readonly();
+		let mut hash = String::new();
+
+		if is_file {
+		hash = get_file_hash(abs_path.clone()).expect("didnt get hash value");
+		}
 
                 metas.push(FileMeta {
                     rel_path,
-		      abs_path,
+		    abs_path,
                     file_name,
+		    hash, 
                     is_file,
                     size,
                     modified: Some(modified),
@@ -126,3 +163,8 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
     }
     Ok(metas)
 }
+
+
+
+
+

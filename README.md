@@ -9,7 +9,7 @@ It uses a local quantized LLM to help recommend safe deletions, and delivers a c
 - [x] TODO: import hashing crate and hash first chunk of files or vector embedding
 - [x] TODO: hard-code values for different file-types and how to treat them
 - [ ] TODO: implement Walkdir to recursively get different directories
-- [ ] TODO: Implement state or communication to Database to ensure its crawling in correct location on actor failure
+- [x] TODO: Implement state or communication to Database to ensure its crawling in correct location on actor failure
 - [x] TODO: see about replacing SystemTime, with another field for better parsing
 
 ### db_manager actor

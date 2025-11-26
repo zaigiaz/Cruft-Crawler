@@ -1,23 +1,23 @@
 use steady_state::*;
+
 use std::path::{Path, PathBuf};
-
-#[allow(unused_imports)]
-use walkdir::WalkDir;
-
-use std::io::prelude::*;
-
-use std::error::Error;
-use filetime::FileTime;
 use sha2::{Sha256, Digest};
+use std::io::prelude::*;
+use walkdir::WalkDir;
+use std::ffi::OsStr;
+use filetime::FileTime;
+use std::error::Error;
+use std::env;
 use hex;
 
-// code here for implementing state later
+//TODO: implementing crawler state later
+//TODO: cross-platform handling
 
 #[allow(dead_code)]
 const BATCH_SIZE: usize = 15;
 
 // derived fn that allow cloning and printing
-#[derive(Default, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub(crate) struct FileMeta {
     pub rel_path:  PathBuf,
     pub abs_path:  PathBuf,
@@ -25,8 +25,8 @@ pub(crate) struct FileMeta {
     pub hash:      String,
     pub is_file:   bool,
     pub size:      u64,
-    pub modified:  Option<filetime::FileTime>,
-    pub created:   Option<filetime::FileTime>,
+    pub modified:  filetime::FileTime,
+    pub created:   filetime::FileTime,
     pub readonly:  bool,
 } 
 
@@ -40,8 +40,8 @@ impl FileMeta {
 	println!("hash: {}",            self.hash);
 	println!("is_file: {}",         self.is_file);
 	println!("size: {}",            self.size);
-	println!("modified: {:?}",      self.modified.unwrap().seconds() / 60);
-	println!("created: {:?}",       self.created.unwrap().seconds() / 60);
+	println!("modified: {}",      self.modified.seconds() / 60);
+	println!("created: {}",       self.created.seconds() / 60);
 	println!("read-only: {}",       self.readonly);
 	println!("Printing Metadata Object -----------\n");
     }
@@ -63,8 +63,16 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
     let mut crawler_tx = crawler_tx.lock().await;
 
-    let dir = Path::new("./");
-    let metas = visit_dir(dir)?;
+    // TODO: make this code work correctly with rel_path, and figure out where to start processing directories
+    // returns pathbuf, from current directory of process being run
+    // let curr_env: PathBuf = env::current_dir()?;
+    // let env_path: &Path = curr_env.as_path();
+
+    let path1 = Path::new("crawl_test/");
+
+    // convert pathbuf to path
+
+    let metas: Vec<FileMeta> = visit_dir(path1)?;
 
     while actor.is_running(|| crawler_tx.mark_closed()) {
 
@@ -92,7 +100,7 @@ pub fn get_file_hash(file_name: PathBuf) -> Result<String, Box<dyn Error>> {
 
     let mut file = std::fs::File::open(file_name)?;
 
-    // buffer of 1024 bytes
+    // buffer of 1024 bytes to read file
     let mut buffer = [0u8; 1024];
 
     let n = file.read(&mut buffer)?;
@@ -114,17 +122,18 @@ pub fn get_file_hash(file_name: PathBuf) -> Result<String, Box<dyn Error>> {
 // function to visit test directory and return metadata of each file and insert into metadata struct
 // then send to the db_manager actor (although this doesnt occur in this function)
 pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
-    let mut metas = Vec::new();
+    let mut metas: Vec<FileMeta> = Vec::new();
 
     // Read the directory (non-recursive)
     for entry_res in WalkDir::new(dir) {
         let entry = entry_res?;
-        let rel_path = entry.path();
-	let abs_path = std::path::absolute(&rel_path)?;
+        let rel_path: &Path = entry.path();
+	let abs_path: PathBuf = std::path::absolute(&rel_path)?;
 
-	let rel_path = rel_path.to_path_buf();
+	// convert relative path to Pathbuf for printing
+	let rel_path: PathBuf = rel_path.to_path_buf();
 
-	let name_os = entry.file_name();
+	let name_os: &OsStr = entry.file_name();
 
 	let file_name: String = match name_os.to_str() {
             Some(s) => s.to_owned(),
@@ -135,12 +144,12 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
         // Try to get metadata; if failing for a specific entry, skip it but continue
         match entry.metadata() {
             Ok(md) => {
-                let is_file = md.is_file();
-                let size = md.len();
-                let modified = FileTime::from_last_modification_time(&md);
-                let created = FileTime::from_creation_time(&md);
-                let readonly = md.permissions().readonly();
-		let mut hash = String::new();
+                let is_file:  bool   = md.is_file();
+                let size:     u64    = md.len();
+                let modified         = FileTime::from_last_modification_time(&md);
+                let created          = FileTime::from_creation_time(&md).expect("created file time");
+                let readonly: bool   = md.permissions().readonly();
+		let mut hash: String = String::new();
 
 		if is_file {
 		hash = get_file_hash(abs_path.clone()).expect("didn't get hash value");
@@ -153,7 +162,7 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
 		    hash, 
                     is_file,
                     size,
-                    modified: Some(modified),
+                    modified, 
                     created,
                     readonly,
                 });
@@ -165,8 +174,4 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
     }
     Ok(metas)
 }
-
-
-
-
 

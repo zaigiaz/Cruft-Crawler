@@ -6,8 +6,7 @@ It uses a local quantized LLM to help recommend safe deletions, and delivers a c
 
 ### crawler actor
 - [x] TODO: implement Walkdir and rewrite visit_dir()
-- [ ] TODO: Figure how to pass path correctly
-- [ ] TODO: set up Job-Batching and how the actor would complete work incrementally
+- [ ] TODO: parse config file to get directory that needs to be crawled
 - [ ] TODO: write function to compare hashes and then add that change to 'is_dupe' flag
 
 ### db_manager actor

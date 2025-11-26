@@ -33,14 +33,13 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
     while actor.is_running(|| crawler_rx.is_closed_and_empty()) {
 
 	// condition to wait for sender or reciever channels to not be empty
-	actor.wait_avail(&mut crawler_rx, 1).await;
+	actor.wait_avail(&mut crawler_rx, 2).await;
 	let recieved = actor.try_take(&mut crawler_rx);
 
 
 
-
 	// print using the function given in crawler.rs for pretty-printing
-	recieved.unwrap().meta_print();
+	recieved.expect("expected returend FileMeta Struct").meta_print();
 
 	}
     Ok(())

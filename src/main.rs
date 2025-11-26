@@ -8,6 +8,7 @@ pub(crate) mod actor {
     pub(crate) mod db_manager;
 }
 
+//TODO: Add functionality for priority setting using screensaver api
 
 fn main() -> Result<(), Box<dyn Error>> {
 

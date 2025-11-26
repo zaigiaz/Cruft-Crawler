@@ -1,6 +1,9 @@
 use steady_state::*;
 use std::path::{Path, PathBuf};
 
+#[allow(unused_imports)]
+use walkdir::WalkDir;
+
 use std::io::prelude::*;
 
 use std::error::Error;
@@ -8,8 +11,10 @@ use filetime::FileTime;
 use sha2::{Sha256, Digest};
 use hex;
 
-// have here for implementing state later
-// use crate::db_manager::db_state;
+// code here for implementing state later
+
+#[allow(dead_code)]
+const BATCH_SIZE: usize = 15;
 
 // derived fn that allow cloning and printing
 #[derive(Default, Clone, Debug, PartialEq, Eq)]
@@ -25,7 +30,7 @@ pub(crate) struct FileMeta {
     pub readonly:  bool,
 } 
 
-// for easy debugging if needed 
+// for easy debugging of struct if needed
 impl FileMeta {
    pub fn meta_print(&self) {
 	println!("Printing Metadata Object -----------");
@@ -42,14 +47,7 @@ impl FileMeta {
     }
 }
 
-
 //TODO: implement Walkdir to recursively get different directories
-//TODO: see about replacing SystemTime, with another field for better parsing
-//TODO: import hashing crate and hash first chunk of files or vector embedding
-//TODO: hard-code values for different file-types and how to treat them
-//TODO: replace SahomeDB back with Sled
-//TODO: create DB schema for Sled / SahomeDB
-//TODO: Implement state or communication to Database to ensure its crawling in correct location on actor failure
 
 // run function 
 pub async fn run(actor: SteadyActorShadow,
@@ -65,7 +63,7 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
     let mut crawler_tx = crawler_tx.lock().await;
 
-    let dir = Path::new("crawl_test/");
+    let dir = Path::new("./");
     let metas = visit_dir(dir)?;
 
     while actor.is_running(|| crawler_tx.mark_closed()) {
@@ -75,8 +73,8 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 	for m in &metas {
 	actor.wait_vacant(&mut crawler_tx, 1).await; 
 
-
-	actor.try_send(&mut crawler_tx, m.clone()).expect("couldn't send to DB");
+	let message = m.clone();
+	actor.try_send(&mut crawler_tx, message).expect("couldn't send to DB");
 	}
 
 	actor.request_shutdown().await
@@ -119,17 +117,21 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
     let mut metas = Vec::new();
 
     // Read the directory (non-recursive)
-    for entry_res in std::fs::read_dir(dir)? {
+    for entry_res in WalkDir::new(dir) {
         let entry = entry_res?;
         let rel_path = entry.path();
 	let abs_path = std::path::absolute(&rel_path)?;
-        let file_name = entry
-            .file_name()
-            .into_string()
-            .unwrap_or_else(|os| os.to_string_lossy().into_owned());
+
+	let rel_path = rel_path.to_path_buf();
+
+	let name_os = entry.file_name();
+
+	let file_name: String = match name_os.to_str() {
+            Some(s) => s.to_owned(),
+            None => name_os.to_string_lossy().into_owned(),
+        };
+
 	
-
-
         // Try to get metadata; if failing for a specific entry, skip it but continue
         match entry.metadata() {
             Ok(md) => {
@@ -141,11 +143,11 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
 		let mut hash = String::new();
 
 		if is_file {
-		hash = get_file_hash(abs_path.clone()).expect("didnt get hash value");
+		hash = get_file_hash(abs_path.clone()).expect("didn't get hash value");
 		}
 
                 metas.push(FileMeta {
-                    rel_path,
+		    rel_path,
 		    abs_path,
                     file_name,
 		    hash, 

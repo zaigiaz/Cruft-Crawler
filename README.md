@@ -5,12 +5,10 @@ It uses a local quantized LLM to help recommend safe deletions, and delivers a c
 ## TODO 
 
 ### crawler actor
-- [x] TODO: get absolute path of file name for id
-- [x] TODO: import hashing crate and hash first chunk of files or vector embedding
-- [x] TODO: hard-code values for different file-types and how to treat them
-- [ ] TODO: implement Walkdir to recursively get different directories
-- [x] TODO: Implement state or communication to Database to ensure its crawling in correct location on actor failure
-- [x] TODO: see about replacing SystemTime, with another field for better parsing
+- [x] TODO: implement Walkdir and rewrite visit_dir()
+- [ ] TODO: Figure how to pass path correctly
+- [ ] TODO: set up Job-Batching and how the actor would complete work incrementally
+- [ ] TODO: write function to compare hashes and then add that change to 'is_dupe' flag
 
 ### db_manager actor
 - [ ] TODO: Remove SahomeDB, use Sled instead
@@ -19,16 +17,28 @@ It uses a local quantized LLM to help recommend safe deletions, and delivers a c
 - [ ] TODO: create DB schema for Sled / SahomeDB
 - [ ] TODO: Implement state or communication to Database to ensure its crawling in correct location on actor failure
 
-### (stretch) implement the llama.cpp actor into the prototype
+### LLM actor
 - [ ] TODO: make Max's llama code actor compliant
 - [ ] TODO: port over Max's llama actor
-- [ ] TODO: get vector embeddings of first chunk of file and put into DB?
+- [ ] TODO: figure out pre-prompts and style
+- [ ] TODO: find limitations of Context Window
 
+### HTML actor
+- [ ] Figure out inteface layout, and learn Tauri
+- [ ] how to integrate LLM into Tauri window
 
-## Crates Potentially needed
+### Stretch Goals && Misc 
+- [ ] <5% CPU usage
+- [ ] implement niceness and priority scheduling
+- [ ] set config file usage
+- [ ] screensaver API
+
+## Crates needed
 - filetime: https://docs.rs/filetime/latest/filetime/ (cross-platform time-dates)
 - Walkdir: https://docs.rs/walkdir/latest/walkdir/ (for recursive traversal of file-system)
 - sled: https://docs.rs/sled/latest/sled/ (for long term storage)
 - steady-state: https://docs.rs/steady_state/latest/steady_state/ (project architecture)
 - llama-cpp: https://docs.rs/llama_cpp/latest/llama_cpp/ (interact with llama-cpp bindings for LLM)
 - SHA-2: https://docs.rs/sha2/latest/sha2/ (hash the contents of files for preformant storage)
+- hex: https://docs.rs/hex/latest/hex/ (decode hash from bytes into string)
+

@@ -1,15 +1,12 @@
 [package]
 name = "cruft-crawler"
-version = "0.1.0"
+version = "0.0.2"
 edition = "2024"
 
 [dependencies]
-sahomedb = "0.4.0"
-steady_state = "0.2.5"  # Replace with the actual version
+steady_state = "0.2.5"  
+sled = "0.34.7"
+walkdir ="2.5.0"
 filetime = "0.2.26"
 sha2 = "0.10.9"
 hex = "0.4.3"
-
-
-
-

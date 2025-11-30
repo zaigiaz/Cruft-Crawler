@@ -25,10 +25,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     graph.block_until_stopped(Duration::from_secs(1)) 
 }
 
-
 const NAME_CRAWLER: &str = "CRAWLER";
 const NAME_DB: &str = "DB_MANAGER";
-
 
 fn build_graph(graph: &mut Graph) {
 

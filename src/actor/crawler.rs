@@ -13,8 +13,6 @@ use hex;
 //TODO: implementing crawler state later
 //TODO: cross-platform handling
 
-#[allow(dead_code)]
-const BATCH_SIZE: usize = 15;
 
 // derived fn that allow cloning and printing
 #[derive(Clone, Debug)]

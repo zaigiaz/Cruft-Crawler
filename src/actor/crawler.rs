@@ -7,7 +7,7 @@ use walkdir::WalkDir;
 use std::ffi::OsStr;
 use filetime::FileTime;
 use std::error::Error;
-use std::env;
+// use std::env;
 use hex;
 
 //TODO: implementing crawler state later

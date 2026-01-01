@@ -8,14 +8,14 @@ use std::ffi::OsStr;
 use filetime::FileTime;
 use std::error::Error;
 // use std::env;
+use serde::*;
 use hex;
 
-//TODO: implementing crawler state later
-//TODO: cross-platform handling
-
+// TODO: implement state
+// TODO: implement file cruft_utils.rs for get_file_hash and other non actor utilities to reside in
 
 // derived fn that allow cloning and printing
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct FileMeta {
     pub rel_path:  PathBuf,
     pub abs_path:  PathBuf,
@@ -23,8 +23,8 @@ pub(crate) struct FileMeta {
     pub hash:      String,
     pub is_file:   bool,
     pub size:      u64,
-    pub modified:  filetime::FileTime,
-    pub created:   filetime::FileTime,
+    pub modified:  i64,
+    pub created:   i64,
     pub readonly:  bool,
 } 
 
@@ -38,14 +38,12 @@ impl FileMeta {
 	println!("hash: {}",            self.hash);
 	println!("is_file: {}",         self.is_file);
 	println!("size: {}",            self.size);
-	println!("modified: {}",      self.modified.seconds() / 60);
-	println!("created: {}",       self.created.seconds() / 60);
+	println!("modified: {}",        self.modified / 60);
+	println!("created: {}",         self.created / 60);
 	println!("read-only: {}",       self.readonly);
 	println!("Printing Metadata Object -----------\n");
     }
 }
-
-//TODO: implement Walkdir to recursively get different directories
 
 // run function 
 pub async fn run(actor: SteadyActorShadow,
@@ -74,8 +72,6 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
     while actor.is_running(|| crawler_tx.mark_closed()) {
 
-	// wait before channel is vacant before sending
-	// note that depending on the situation you can call the await_for_***() function for different scenarios
 	for m in &metas {
 	actor.wait_vacant(&mut crawler_tx, 1).await; 
 
@@ -144,8 +140,8 @@ pub fn visit_dir(dir: &Path) -> Result<Vec<FileMeta>, Box<dyn Error>> {
             Ok(md) => {
                 let is_file:  bool   = md.is_file();
                 let size:     u64    = md.len();
-                let modified         = FileTime::from_last_modification_time(&md);
-                let created          = FileTime::from_creation_time(&md).expect("created file time");
+                let modified: i64    = FileTime::from_last_modification_time(&md).seconds();
+                let created:  i64    = FileTime::from_creation_time(&md).expect("created file time").seconds();
                 let readonly: bool   = md.permissions().readonly();
 		let mut hash: String = String::new();
 

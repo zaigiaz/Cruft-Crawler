@@ -4,13 +4,14 @@ It uses a local quantized LLM to help recommend safe deletions, and delivers a c
 
 ## TODO 
 
+### main functionality
+- [ ] TODO: parse config file to get directory that needs to be crawled
+
 ### crawler actor
 - [x] TODO: implement Walkdir and rewrite visit_dir()
-- [ ] TODO: parse config file to get directory that needs to be crawled
 - [ ] TODO: write function to compare hashes and then add that change to 'is_dupe' flag
 
 ### db_manager actor
-- [ ] TODO: Remove SahomeDB, use Sled instead
 - [ ] TODO: push all the metadata into the Sled database 
 - [ ] TODO: research a way to view the sled database for presentation
 - [ ] TODO: create DB schema for Sled / SahomeDB

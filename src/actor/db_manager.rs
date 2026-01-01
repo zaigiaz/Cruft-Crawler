@@ -1,8 +1,7 @@
 use steady_state::*;
 use std::error::Error;
 use crate::actor::crawler::FileMeta;
-// use sled::Db;
-
+use sled::Db;
 
 const BATCH_SIZE: usize = 1;
 
@@ -18,15 +17,18 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
     let mut crawler_rx = crawler_rx.lock().await;
 
+
+    // TODO: example code that I need to change
     let db: sled::Db = sled::open("../db").unwrap();
     let _ = db.insert(b"yo!", b"v1");
+
 
     while actor.is_running(|| crawler_rx.is_closed_and_empty()) {
 
 	actor.wait_avail(&mut crawler_rx, BATCH_SIZE).await;
 	let recieved = actor.try_take(&mut crawler_rx);
 
-	recieved.expect("expected returend FileMeta Struct").meta_print();
+	recieved.expect("expected FileMeta Struct (db_actor)").meta_print();
 	}
 
   Ok(())
@@ -34,19 +36,34 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 
 
 // add db entry given key and value pair
-fn db_add() -> Result<(), Box<dyn Error>> {
+fn db_add(key: i32, value: FileMeta, db: sled::Db) -> Result<(), Box<dyn Error>> {
+
+    println!("{}", key);
+    value.meta_print();
+
+
+    // value.serialize();
+
+    db.insert(b"yo", b"no");
+
 Ok(())
 }
 
 
 // edit db entry given key
-fn db_edit() -> Result<(), Box<dyn Error>> {
+fn db_edit(key: i32) -> Result<(), Box<dyn Error>> {
+
+// get key from db and edit after deserializing
+
 Ok(())
 }
 
 
 // remove db entry given key
-fn db_remove() -> Result<(), Box<dyn Error>> {
+fn db_remove(key: i32) -> Result<(), Box<dyn Error>> {
+
+// remove entry based on key
+
 Ok(())
 }
 

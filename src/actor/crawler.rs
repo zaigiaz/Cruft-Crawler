@@ -8,11 +8,12 @@ use std::ffi::OsStr;
 use filetime::FileTime;
 use std::error::Error;
 // use std::env;
-use serde::*;
+use serde::{Serialize, Deserialize};
 use hex;
 
 // TODO: implement state
 // TODO: implement file cruft_utils.rs for get_file_hash and other non actor utilities to reside in
+
 
 // derived fn that allow cloning and printing
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -30,6 +31,7 @@ pub(crate) struct FileMeta {
 
 // for easy debugging of struct if needed
 impl FileMeta {
+
    pub fn meta_print(&self) {
 	println!("Printing Metadata Object -----------");
 	println!("Absolute_Path: {:?}", self.abs_path);
@@ -42,6 +44,16 @@ impl FileMeta {
 	println!("created: {}",         self.created / 60);
 	println!("read-only: {}",       self.readonly);
 	println!("Printing Metadata Object -----------\n");
+    }
+
+    // serialize into bytes using bincode
+    pub fn to_bytes(&self) -> Result<Vec<u8>, Box<dyn Error>> {
+	Ok(serde_cbor::to_vec(self)?)
+    }
+
+    // deserialize from bytes
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Box<dyn Error>> {
+	Ok(serde_cbor::from_slice(bytes)?)
     }
 }
 

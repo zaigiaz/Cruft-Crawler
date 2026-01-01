@@ -1,7 +1,9 @@
 use steady_state::*;
 use std::error::Error;
 use crate::actor::crawler::FileMeta;
-use sled::Db;
+
+
+
 
 const BATCH_SIZE: usize = 1;
 
@@ -38,13 +40,14 @@ async fn internal_behavior<A: SteadyActor>(mut actor: A,
 // add db entry given key and value pair
 fn db_add(key: i32, value: FileMeta, db: sled::Db) -> Result<(), Box<dyn Error>> {
 
-    println!("{}", key);
-    value.meta_print();
+    // serialise struct into u8
+    let value_s = value.to_bytes()?;
 
+    // serialize i32 to bytes
+    let key_s = key.to_be_bytes();
 
-    // value.serialize();
-
-    db.insert(b"yo", b"no");
+    // insert into db
+    let _ = db.insert(key_s, value_s)?;
 
 Ok(())
 }
@@ -53,18 +56,27 @@ Ok(())
 // edit db entry given key
 fn db_edit(key: i32) -> Result<(), Box<dyn Error>> {
 
-// get key from db and edit after deserializing
+    let key_s = key.to_be_bytes();
+
+    // sled has immutable db, so we need to delete old key then insert new
+
+    // let _ = db
 
 Ok(())
 }
 
 
 // remove db entry given key
-fn db_remove(key: i32) -> Result<(), Box<dyn Error>> {
+fn db_remove(key: i32, db: sled::Db) -> Result<(), Box<dyn Error>> {
 
-// remove entry based on key
+    let key_s = key.to_be_bytes();
+    
+    // remove entry based on key
+    db.remove(key_s);
 
-Ok(())
+    Ok(())
 }
+
+
 
 
